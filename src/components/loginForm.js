@@ -1,40 +1,66 @@
 import React, {Component} from 'react';
 import {Text, Button, StyleSheet, View} from 'react-native';
 import firebase from 'firebase';
-import {Input} from './common/input';
+import {Input,Spinner} from './common';
 
 class LoginForm extends Component{
   state = {
     email: '',
     password:'',
-    error:''
+    error:'',
+    loading: false,
   }
 
   onButtonClick(){
+    const { email, password } = this.state;
     this.setState({
       password:'',
-      error:''
+      error:'',
+      loading:true,
     });
-    const {email, password} = this.state;
     firebase.auth().signInWithEmailAndPassword(email, password)
-    .catch((e) => {
+    .then(this.onLoginSuccess.bind(this))
+    .catch(() => {
       firebase.auth().createUserWithEmailAndPassword(email, password)
-        .catch((e)=>{
-          this.setState({
-            error:'Authantication Failed : ' + e
-          })
-        });
+        .then(this.onLoginSuccess.bind(this))
+        .catch(this.onLoginFailed.bind(this));
+    });
+  }
+
+  onLoginSuccess(){
+    this.setState({
+      email: '',
+      password:'',
+      error:'',
+      loading: false,
+    });
+  }
+
+  onLoginFailed(e){
+    this.setState({
+      error:'Authantication Failed ',
+      loading: false,
     });
   }
 
   render(){
-    const {error} = this.state;
+    const {error, loading} = this.state;
+
     const errorMsg =error ? (
       <Text style={styles.errorStyle}>
         {error}
       </Text>
     ):
     null;
+debugger;
+    const loginButton = loading ? (
+      <Spinner />
+    ) : (
+      <Button onPress = {this.onButtonClick.bind(this)}
+                color='#E3797C'
+                title='Login' />
+    )
+
     return(
       <View style={{marginTop:30}}>
         <View>
@@ -61,7 +87,7 @@ class LoginForm extends Component{
         </View>
         {errorMsg}
         <View style={styles.buttonWrapper}>
-          <Button onPress = {this.onButtonClick.bind(this)} color='#E3797C' title='Login' />
+          {loginButton}
         </View>
      </View>
     )
